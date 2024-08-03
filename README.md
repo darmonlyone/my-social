@@ -53,4 +53,143 @@ Setup environment `.env` and `sqlboiler.toml`. You can look up on `.example` suf
 
 ## API Doc
 
-<!-- TODO add api doc -->
+- Login
+
+  URL: `/login`  
+  Method: POST  
+  Description: Authenticates a user and returns a user ID if successful.
+
+Request Body:
+
+```
+{
+"username": "string",
+"password": "string"
+}
+```
+
+Response:
+
+```
+{
+"userId": "string"
+}
+```
+
+- Register
+
+  URL: `/register`  
+  Method: POST  
+  Description: Registers a new user.
+
+Request Body:
+
+```
+{
+  "username": "string",
+  "password": "string",
+  "firstname": "string",
+  "lastname": "string"
+}
+```
+
+Response:`Empty`
+
+- Create Post
+
+  URL: `/post.create`  
+  Method: POST  
+  Description: Creates a new post. Requires Basic Authentication.
+
+Request Body:
+
+```
+{
+  "title": "string",
+  "content": "string"
+}
+```
+
+Response: `Empty`
+
+- List Posts
+
+  URL: `/post.list`  
+  Method: POST  
+  Description: Lists all posts. Requires Basic Authentication.
+
+Request Body: `Empty`
+
+Response:
+
+```
+{
+"posts": [
+    {
+    "id": "string",
+    "title": "string",
+    "content": "string"
+    }
+  ]
+}
+```
+
+- Get Post
+
+  URL: `/post.get`  
+  Method: POST  
+  Description: Retrieves a post by ID. Requires Basic Authentication.
+
+Request Body:
+
+```
+{
+  "id": "string"
+}
+```
+
+Response:
+
+```
+{
+  "post": {
+  "id": "string",
+  "title": "string",
+  "content": "string"
+  }
+}
+```
+
+- Edit Post
+
+  URL: `/post.edit`  
+  Method: POST  
+  Description: Edits a post by ID. Requires Basic Authentication.
+
+Request Body:
+
+```
+{
+  "id": "string",
+  "title": "string",
+  "content": "string"
+}
+```
+
+Response: `Empty`
+
+- Delete Post
+
+  URL: /post.delete  
+  Method: POST  
+  Description: Deletes a post by ID. Requires Basic Authentication.
+
+Request Body:
+
+```
+{
+  "id": "string"
+}
+```
+
+Response: `Empty`
