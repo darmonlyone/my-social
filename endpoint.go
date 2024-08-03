@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-playground/validator"
 )
 
 type SocialEndpoints struct {
@@ -33,13 +34,15 @@ func MakeSocialEndpoints(svc Service) SocialEndpoints {
 func makeLoginEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LoginRequest)
-		err := svc.Login(ctx, req.Username, req.Password)
+		account, err := svc.Login(ctx, req.Username, req.Password)
 		if err != nil {
 			return nil, err
 		}
-		return EmptyResponse{}, nil
+		return LoginResponse{UserID: account.ID}, nil
 	}
 }
+
+var validate = validator.New()
 
 // Account Requests and Responses
 type LoginRequest struct {
@@ -47,9 +50,16 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type LoginResponse struct {
+	UserID string `json:"userId"`
+}
+
 func makeRegisterEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(RegisterRequest)
+		if err := validate.Struct(req); err != nil {
+			return nil, NewCustomErrorBadRequest(err)
+		}
 		err := svc.StoreAccount(ctx, req.Username, req.Password, req.Firstname, req.Lastname)
 		if err != nil {
 			return nil, err
@@ -68,6 +78,9 @@ type RegisterRequest struct {
 func makeFindPostEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(FindPostRequest)
+		if err := validate.Struct(req); err != nil {
+			return nil, NewCustomErrorBadRequest(err)
+		}
 		post, err := svc.FindPost(ctx, req.ID)
 		if err != nil {
 			return nil, err
@@ -102,7 +115,10 @@ type FindAllPostsResponse struct {
 func makeStorePostEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(StorePostRequest)
-		err := svc.StorePost(ctx, req.CreatedBy, req.Title, req.Content)
+		if err := validate.Struct(req); err != nil {
+			return nil, NewCustomErrorBadRequest(err)
+		}
+		err := svc.StorePost(ctx, req.Title, req.Content)
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +127,6 @@ func makeStorePostEndpoint(svc Service) endpoint.Endpoint {
 }
 
 type StorePostRequest struct {
-	CreatedBy AccountID `json:"createdBy" validate:"required"`
 	Title     string    `json:"title" validate:"required"`
 	Content   string    `json:"content" validate:"required"`
 }
@@ -119,6 +134,9 @@ type StorePostRequest struct {
 func makeUpdatePostEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdatePostRequest)
+		if err := validate.Struct(req); err != nil {
+			return nil, NewCustomErrorBadRequest(err)
+		}
 		err := svc.UpdatePost(ctx, req.ID, req.Title, req.Content)
 		if err != nil {
 			return nil, err
@@ -136,6 +154,9 @@ type UpdatePostRequest struct {
 func makeDeletePostEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DeletePostRequest)
+		if err := validate.Struct(req); err != nil {
+			return nil, NewCustomErrorBadRequest(err)
+		}
 		err := svc.DeletePost(ctx, req.ID)
 		if err != nil {
 			return nil, err

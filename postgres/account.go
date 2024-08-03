@@ -52,7 +52,7 @@ func (r *accountRepo) Store(ctx context.Context, account *social.Account) error 
 
 // FindByUsername implements social.AccountRepo.
 func (r *accountRepo) FindByUsername(ctx context.Context, username string) (*social.Account, error) {
-	boil, err := boilentity.Accounts(qm.Where("username=?", username)).One(ctx, r.db)
+	boil, err := boilentity.Accounts(boilentity.AccountWhere.Username.EQ(username)).One(ctx, r.db)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, social.ErrNotFound

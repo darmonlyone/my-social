@@ -9,6 +9,13 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
+const userIDKey string = "userID"
+
+func UserIDFromContext(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value(userIDKey).(string)
+	return userID, ok
+}
+
 type ErrorEncoder func(ctx context.Context, err error, w http.ResponseWriter)
 
 type errorer interface {
@@ -57,6 +64,8 @@ func HandleCommonErrors(err error, w http.ResponseWriter) {
 		w.WriteHeader(http.StatusBadRequest)
 	case ErrInvalidRequestPayload:
 		w.WriteHeader(http.StatusBadRequest)
+	case ErrAuthNotHavePermission:
+		w.WriteHeader(http.StatusForbidden)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 	}

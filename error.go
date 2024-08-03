@@ -35,3 +35,7 @@ func (c CustomErrorBadRequest) Error() string {
 func NewCustomErrorBadRequestMessage(err string) error {
 	return CustomErrorBadRequest{err: errors.New(err)}
 }
+
+func NewCustomErrorBadRequest(err error) error {
+	return CustomErrorBadRequest{err: err}
+}

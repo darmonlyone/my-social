@@ -2,9 +2,11 @@ package social
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -43,11 +45,15 @@ func NewHTTPServer(
 	router.Group(func(r chi.Router) {
 		r.Post("/login", loginHandler.ServeHTTP)
 		r.Post("/register", registerHandler.ServeHTTP)
-		r.Post("/post.create", createPostHandler.ServeHTTP)
-		r.Post("/post.list", listPostHandler.ServeHTTP)
-		r.Post("/post.get", getPostHandler.ServeHTTP)
-		r.Post("/post.edit", editPostHandler.ServeHTTP)
-		r.Post("/post.delete", deletePostHandler.ServeHTTP)
+
+		// Protected routes
+		r.With(BasicAuthMiddleware(svc)).Group(func(r chi.Router) {
+			r.Post("/post.create", createPostHandler.ServeHTTP)
+			r.Post("/post.list", listPostHandler.ServeHTTP)
+			r.Post("/post.get", getPostHandler.ServeHTTP)
+			r.Post("/post.edit", editPostHandler.ServeHTTP)
+			r.Post("/post.delete", deletePostHandler.ServeHTTP)
+		})
 
 	})
 	return router
@@ -160,4 +166,44 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
 	})
+}
+
+func BasicAuthMiddleware(svc Service) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			auth := r.Header.Get("Authorization")
+			if auth == "" {
+				http.Error(w, "Authorization header required", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.SplitN(auth, " ", 2)
+			if len(parts) != 2 || parts[0] != "Basic" {
+				http.Error(w, "Invalid authorization format", http.StatusUnauthorized)
+				return
+			}
+
+			payload, err := base64.StdEncoding.DecodeString(parts[1])
+			if err != nil {
+				http.Error(w, "Invalid base64 encoding", http.StatusUnauthorized)
+				return
+			}
+
+			cred := strings.SplitN(string(payload), ":", 2)
+			if len(cred) != 2 {
+				http.Error(w, "Invalid authorization value", http.StatusUnauthorized)
+				return
+			}
+
+			username, password := cred[0], cred[1]
+			account, err := svc.Login(r.Context(), username, password)
+			if err != nil {
+				http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userIDKey, account.ID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

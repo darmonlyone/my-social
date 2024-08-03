@@ -10,14 +10,14 @@ import (
 
 type Service interface {
 	// Account
-	Login(ctx context.Context, username string, password string) error
+	Login(ctx context.Context, username string, password string) (*Account, error)
 	FindAccount(ctx context.Context, id string) (*Account, error)
 	StoreAccount(ctx context.Context, username string, password string, firstname string, lastname string) error
 
 	// Post
 	FindPost(ctx context.Context, id string) (*Post, error)
 	FindAllPosts(ctx context.Context) ([]*Post, error)
-	StorePost(ctx context.Context, createdBy AccountID, title string, content string) error
+	StorePost(ctx context.Context, title string, content string) error
 	UpdatePost(ctx context.Context, id PostID, title *string, content *string) error
 	DeletePost(ctx context.Context, id string) error
 }
@@ -34,23 +34,23 @@ func NewService(accountRepo AccountRepo, postRepo PostRepo) Service {
 }
 
 // Account
-func (s *service) Login(ctx context.Context, username string, password string) error {
+func (s *service) Login(ctx context.Context, username string, password string) (*Account, error) {
 	authAccount, err := s.accountRepo.FindByUsername(ctx, username)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			return ErrIncorrectUsernameOrPassword
+			return nil, ErrIncorrectUsernameOrPassword
 		}
-		return err
+		return nil, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(authAccount.HashedPassword),
 		[]byte(password),
 	); err != nil {
-		return ErrIncorrectUsernameOrPassword
+		return nil, ErrIncorrectUsernameOrPassword
 	}
 
-	return nil
+	return authAccount, nil
 }
 
 func (s *service) FindAccount(ctx context.Context, id string) (*Account, error) {
@@ -58,7 +58,12 @@ func (s *service) FindAccount(ctx context.Context, id string) (*Account, error) 
 }
 
 func (s *service) StoreAccount(ctx context.Context, username string, password string, firstname string, lastname string) error {
-	findAccount, _ := s.accountRepo.FindByUsername(ctx, username)
+	findAccount, err := s.accountRepo.FindByUsername(ctx, username)
+	if err != nil {
+		if !errors.Is(err, ErrNotFound) {
+			return err
+		}
+	}
 	if findAccount != nil {
 		return ErrUserAlreadyExists
 	}
@@ -73,6 +78,7 @@ func (s *service) StoreAccount(ctx context.Context, username string, password st
 
 	account := &Account{
 		ID:             uuid.NewString(),
+		Username:       username,
 		HashedPassword: string(hashedPass),
 		FirstName:      firstname,
 		LastName:       lastname,
@@ -89,10 +95,14 @@ func (s *service) FindAllPosts(ctx context.Context) ([]*Post, error) {
 	return s.postRepo.FindAll(ctx)
 }
 
-func (s *service) StorePost(ctx context.Context, createdBy AccountID, title string, content string) error {
+func (s *service) StorePost(ctx context.Context, title string, content string) error {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return ErrBadRequest
+	}
 	post := &Post{
 		ID:        uuid.NewString(),
-		CreatedBy: createdBy,
+		CreatedBy: userID,
 		Title:     title,
 		Content:   content,
 	}
@@ -100,6 +110,19 @@ func (s *service) StorePost(ctx context.Context, createdBy AccountID, title stri
 }
 
 func (s *service) UpdatePost(ctx context.Context, id PostID, title *string, content *string) error {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return ErrBadRequest
+	}
+	post, err := s.postRepo.Find(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if post.CreatedBy != userID {
+		return ErrAuthNotHavePermission
+	}
+
 	return s.postRepo.Update(ctx, id, title, content)
 }
 
