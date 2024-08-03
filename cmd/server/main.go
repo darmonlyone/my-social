@@ -24,7 +24,7 @@ func main() {
 
 	logger = logger.With(
 		zap.Any("app", map[string]string{
-			"name":       "aiconnectUserAccount",
+			"name":       "social",
 			"component":  "server",
 			"instanceID": uuid.NewString(),
 		}),

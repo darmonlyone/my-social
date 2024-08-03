@@ -23,6 +23,9 @@ func NewAccountRepo(db *sql.DB) social.AccountRepo {
 func (r *accountRepo) Find(ctx context.Context, id string) (*social.Account, error) {
 	boil, err := boilentity.Accounts(qm.Where("id=?", id)).One(ctx, r.db)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, social.ErrNotFound
+		}
 		return nil, err
 	}
 	return &social.Account{
@@ -51,6 +54,9 @@ func (r *accountRepo) Store(ctx context.Context, account *social.Account) error 
 func (r *accountRepo) FindByUsername(ctx context.Context, username string) (*social.Account, error) {
 	boil, err := boilentity.Accounts(qm.Where("username=?", username)).One(ctx, r.db)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, social.ErrNotFound
+		}
 		return nil, err
 	}
 	return &social.Account{

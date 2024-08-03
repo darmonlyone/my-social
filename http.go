@@ -2,13 +2,13 @@ package social
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -26,6 +26,9 @@ func NewHTTPServer(
 
 	return r
 }
+
+
+
 
 func ListenAndServe(ctx context.Context, addr string, handler http.Handler, logger *zap.Logger) {
 	l := logger.With(zap.String("logContext", "httpServer"))
@@ -56,4 +59,16 @@ func ListenAndServe(ctx context.Context, addr string, handler http.Handler, logg
 		l.Fatal("graceful shutdown failed", zap.Error(err))
 	}
 	l.Info("gracefully shutdown server")
+}
+
+// encode errors from business-logic
+func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	HandleCommonErrors(err, w)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"error": err.Error(),
+		"ok":    false,
+	})
 }

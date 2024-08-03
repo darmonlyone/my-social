@@ -24,6 +24,9 @@ func NewPostRepo(db *sql.DB) social.PostRepo {
 func (r *postRepo) Find(ctx context.Context, id string) (*social.Post, error) {
 	post, err := boilentity.Posts(qm.Where("id=?", id)).One(ctx, r.db)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, social.ErrNotFound
+		}
 		return nil, err
 	}
 	return &social.Post{

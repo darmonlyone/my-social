@@ -2,6 +2,7 @@ package social
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -9,6 +10,7 @@ import (
 
 type Service interface {
 	// Account
+	Login(ctx context.Context, username string, password string) error
 	FindAccount(ctx context.Context, id string) (*Account, error)
 	StoreAccount(ctx context.Context, username string, password string, firstname string, lastname string) error
 
@@ -32,6 +34,25 @@ func NewService(accountRepo AccountRepo, postRepo PostRepo) Service {
 }
 
 // Account
+func (s *service) Login(ctx context.Context, username string, password string) error {
+	authAccount, err := s.accountRepo.FindByUsername(ctx, username)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return ErrIncorrectUsernameOrPassword
+		}
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(authAccount.HashedPassword),
+		[]byte(password),
+	); err != nil {
+		return ErrIncorrectUsernameOrPassword
+	}
+
+	return nil
+}
+
 func (s *service) FindAccount(ctx context.Context, id string) (*Account, error) {
 	return s.accountRepo.Find(ctx, id)
 }

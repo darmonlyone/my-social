@@ -11,20 +11,14 @@ var ErrNotFound = errors.New("not found")
 
 var ErrInvalidRequestPayload = errors.New("invalid request payload")
 
-var ErrAuthorization = errors.New("authorization error")
-
 // auth error
 var ErrAuthInvalidUserCredentials = errors.New("auth: invalid credentials")
-
-var ErrAuthInValidToken = errors.New("auth: invalid token")
 
 var ErrAuthNotAuthorized = errors.New("auth: not authorized")
 
 var ErrAuthNotHavePermission = errors.New("auth: not have permission")
 
-var ErrAuthSessionNotActive = errors.New("auth: session not active")
-
-var ErrUserRoleIsInvalid = errors.New("auth: user role is invalid")
+var ErrIncorrectUsernameOrPassword = errors.New("auth: incorrect username or password")
 
 // error
 var ErrUserAlreadyExists = errors.New("user already exit")

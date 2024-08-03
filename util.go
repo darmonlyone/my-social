@@ -59,8 +59,6 @@ func HandleCommonErrors(err error, w http.ResponseWriter) {
 	switch err {
 	case ErrAuthNotAuthorized:
 		w.WriteHeader(http.StatusUnauthorized)
-	case ErrAuthorization:
-		w.WriteHeader(http.StatusUnauthorized)
 	case ErrUserAlreadyExists:
 		w.WriteHeader(http.StatusBadRequest)
 	case ErrNotFound:
