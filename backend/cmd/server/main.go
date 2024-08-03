@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/caarlos0/env/v6"
+	social "github.com/darmonlyone/my-social"
 	"github.com/darmonlyone/my-social/postgres"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -15,7 +17,6 @@ import (
 )
 
 func main() {
-
 	logger, _ := zap.NewDevelopment()
 	if err := godotenv.Load(".env"); err != nil {
 		logger.Fatal("die loading .env", zap.Error(err))
@@ -49,6 +50,15 @@ func main() {
 		logger.Fatal("die opening connection to postgres", zap.Error(err))
 	}
 
+	service := social.NewService()
+	httpHandler := social.NewHTTPServer(
+		logger,
+		service,
+	)
+	listenAddr := fmt.Sprintf(":%d", config.Port)
+	ctx, cancel := context.WithCancel(context.Background())
+	go social.ListenAndServe(ctx, listenAddr, httpHandler, logger)
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(
 		sig,
@@ -59,6 +69,7 @@ func main() {
 	)
 
 	<-sig
+	cancel()
 	db.Close()
 }
 
