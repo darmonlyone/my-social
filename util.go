@@ -9,32 +9,20 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
-func EncodeJSONResponseWithStatus(status int) func(context.Context, http.ResponseWriter, interface{}) error {
-	return func(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-		w.Header().Set("Content-Type", "application/json;charset=utf-8")
-		w.WriteHeader(status)
-		if response != nil {
-			json.NewEncoder(w).Encode(response)
-		} else {
-			w.Write(nil)
-		}
-		return nil
-	}
-}
-
 type ErrorEncoder func(ctx context.Context, err error, w http.ResponseWriter)
 
 type errorer interface {
 	error() error
 }
 
-func EncodeResponse(encodeError ErrorEncoder) kithttp.EncodeResponseFunc {
+func MakeEncodeResponse(encodeError ErrorEncoder, status int) kithttp.EncodeResponseFunc {
 	return func(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 		if e, ok := response.(errorer); ok && e.error() != nil {
 			encodeError(ctx, e.error(), w)
 			return nil
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(status)
 		return json.NewEncoder(w).Encode(response)
 	}
 }
@@ -57,6 +45,8 @@ func HandleCommonErrors(err error, w http.ResponseWriter) {
 		return
 	}
 	switch err {
+	case ErrIncorrectUsernameOrPassword:
+		w.WriteHeader(http.StatusUnauthorized)
 	case ErrAuthNotAuthorized:
 		w.WriteHeader(http.StatusUnauthorized)
 	case ErrUserAlreadyExists:

@@ -25,6 +25,7 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.10.9
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/sqlboiler/v4 v4.16.2
 	go.uber.org/multierr v1.10.0 // indirect

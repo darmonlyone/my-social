@@ -49,7 +49,7 @@ type LoginRequest struct {
 
 func makeRegisterEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(StoreAccountRequest)
+		req := request.(RegisterRequest)
 		err := svc.StoreAccount(ctx, req.Username, req.Password, req.Firstname, req.Lastname)
 		if err != nil {
 			return nil, err
@@ -58,7 +58,7 @@ func makeRegisterEndpoint(svc Service) endpoint.Endpoint {
 	}
 }
 
-type StoreAccountRequest struct {
+type RegisterRequest struct {
 	Username  string `json:"username" validate:"required"`
 	Password  string `json:"password" validate:"required"`
 	Firstname string `json:"firstname" validate:"required"`

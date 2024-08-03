@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"github.com/darmonlyone/my-social/postgres"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
 

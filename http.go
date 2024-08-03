@@ -7,28 +7,118 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	kithttp "github.com/go-kit/kit/transport/http"
 	"go.uber.org/zap"
 )
 
 func NewHTTPServer(
 	logger *zap.Logger,
-	s Service,
+	svc Service,
 ) http.Handler {
 
-	r := chi.NewRouter()
-	r.Use(
+	router := chi.NewRouter()
+	router.Use(
 		middleware.CleanPath,
 		middleware.Timeout(60*time.Second),
 		middleware.Recoverer,
 	)
 
-	return r
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	endpoints := MakeSocialEndpoints(svc)
+
+	loginHandler := makeLoginHTTPHandler(opts, endpoints, logger, svc)
+	registerHandler := makeRegisterHTTPHandler(opts, endpoints, logger, svc)
+
+	createPostHandler := makeCreatePostHTTPHandler(opts, endpoints, logger, svc)
+	listPostHandler := makeListPostHTTPHandler(opts, endpoints, logger, svc)
+	getPostHandler := makeGetPostHTTPHandler(opts, endpoints, logger, svc)
+	editPostHandler := makeEditPostHTTPHandler(opts, endpoints, logger, svc)
+	deletePostHandler := makeDeletePostHTTPHandler(opts, endpoints, logger, svc)
+
+	router.Group(func(r chi.Router) {
+		r.Post("/login", loginHandler.ServeHTTP)
+		r.Post("/register", registerHandler.ServeHTTP)
+		r.Post("/post.create", createPostHandler.ServeHTTP)
+		r.Post("/post.list", listPostHandler.ServeHTTP)
+		r.Post("/post.get", getPostHandler.ServeHTTP)
+		r.Post("/post.edit", editPostHandler.ServeHTTP)
+		r.Post("/post.delete", deletePostHandler.ServeHTTP)
+
+	})
+	return router
 }
 
+func makeLoginHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+	return kithttp.NewServer(
+		endpoints.Login,
+		DecodeMappingBodyRequest[LoginRequest],
+		MakeEncodeResponse(encodeError, 200),
+		opts...,
+	)
+}
 
+func makeRegisterHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+	return kithttp.NewServer(
+		endpoints.Register,
+		DecodeMappingBodyRequest[RegisterRequest],
+		MakeEncodeResponse(encodeError, 201),
+		opts...,
+	)
+}
 
+func makeCreatePostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+	return kithttp.NewServer(
+		endpoints.StorePost,
+		DecodeMappingBodyRequest[StorePostRequest],
+		MakeEncodeResponse(encodeError, 201),
+		opts...,
+	)
+}
+
+func makeListPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+	return kithttp.NewServer(
+		endpoints.FindAllPosts,
+		decodeEmptyRequest,
+		MakeEncodeResponse(encodeError, 200),
+		opts...,
+	)
+}
+
+func makeGetPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+	return kithttp.NewServer(
+		endpoints.FindPost,
+		DecodeMappingBodyRequest[FindPostRequest],
+		MakeEncodeResponse(encodeError, 200),
+		opts...,
+	)
+}
+
+func makeEditPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+	return kithttp.NewServer(
+		endpoints.UpdatePost,
+		DecodeMappingBodyRequest[UpdatePostRequest],
+		MakeEncodeResponse(encodeError, 200),
+		opts...,
+	)
+}
+
+func makeDeletePostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+	return kithttp.NewServer(
+		endpoints.DeletePost,
+		DecodeMappingBodyRequest[DeletePostRequest],
+		MakeEncodeResponse(encodeError, 200),
+		opts...,
+	)
+}
+
+func decodeEmptyRequest(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
+}
 
 func ListenAndServe(ctx context.Context, addr string, handler http.Handler, logger *zap.Logger) {
 	l := logger.With(zap.String("logContext", "httpServer"))
@@ -69,6 +159,5 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
-		"ok":    false,
 	})
 }
