@@ -46,3 +46,20 @@ func (r *accountRepo) Store(ctx context.Context, account *social.Account) error 
 	}
 	return boilAccount.Insert(ctx, r.db, boil.Infer())
 }
+
+// FindByUsername implements social.AccountRepo.
+func (r *accountRepo) FindByUsername(ctx context.Context, username string) (*social.Account, error) {
+	boil, err := boilentity.Accounts(qm.Where("username=?", username)).One(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+	return &social.Account{
+		ID:             boil.ID,
+		Username:       boil.Username,
+		HashedPassword: boil.HashedPassword,
+		FirstName:      boil.Firstname,
+		LastName:       boil.Lastname,
+		CreatedAt:      boil.CreatedAt,
+		UpdatedAt:      boil.UpdatedAt,
+	}, nil
+}

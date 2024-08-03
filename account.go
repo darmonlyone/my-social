@@ -20,4 +20,5 @@ type Account struct {
 type AccountRepo interface {
 	Store(ctx context.Context, account *Account) error
 	Find(ctx context.Context, id AccountID) (*Account, error)
+	FindByUsername(ctx context.Context, username string) (*Account, error)
 }

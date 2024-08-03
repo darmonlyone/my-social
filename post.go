@@ -21,5 +21,5 @@ type PostRepo interface {
 	Find(ctx context.Context, id PostID) (*Post, error)
 	FindAll(ctx context.Context) ([]*Post, error)
 	Delete(ctx context.Context, id PostID) error
-	Update(ctx context.Context, post *Post) (*Post, error)
+	Update(ctx context.Context, id PostID, title *string, content *string) error
 }

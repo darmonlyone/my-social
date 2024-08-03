@@ -28,4 +28,5 @@ require (
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/sqlboiler/v4 v4.16.2
 	go.uber.org/multierr v1.10.0 // indirect
+	golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d
 )

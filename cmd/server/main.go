@@ -50,7 +50,10 @@ func main() {
 		logger.Fatal("die opening connection to postgres", zap.Error(err))
 	}
 
-	service := social.NewService()
+	accountRepo := postgres.NewAccountRepo(db)
+	postRepo := postgres.NewPostRepo(db)
+	service := social.NewService(accountRepo, postRepo)
+
 	httpHandler := social.NewHTTPServer(
 		logger,
 		service,

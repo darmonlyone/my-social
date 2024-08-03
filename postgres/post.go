@@ -65,18 +65,22 @@ func (r *postRepo) Store(ctx context.Context, post *social.Post) error {
 	return boilPost.Insert(ctx, r.db, boil.Infer())
 }
 
-func (r *postRepo) Update(ctx context.Context, post *social.Post) (*social.Post, error) {
-	boilPost := &boilentity.Post{
-		ID:        post.ID,
-		CreatedBy: post.CreatedBy,
-		Title:     post.Title,
-		Content:   null.StringFrom(post.Content),
-	}
-	_, err := boilPost.Update(ctx, r.db, boil.Infer())
+func (r *postRepo) Update(ctx context.Context, id social.PostID, title *string, content *string) error {
+	postEntity, err := boilentity.FindPost(ctx, r.db, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return post, nil
+	if title != nil {
+		postEntity.Title = *title
+	}
+	if content != nil {
+		postEntity.Content = null.StringFrom(*content)
+	}
+	_, err = postEntity.Update(ctx, r.db, boil.Infer())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *postRepo) Delete(ctx context.Context, id string) error {
