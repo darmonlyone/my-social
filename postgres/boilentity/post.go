@@ -28,6 +28,8 @@ type Post struct {
 	CreatedBy string      `boil:"created_by" json:"created_by" toml:"created_by" yaml:"created_by"`
 	Title     string      `boil:"title" json:"title" toml:"title" yaml:"title"`
 	Content   null.String `boil:"content" json:"content,omitempty" toml:"content" yaml:"content,omitempty"`
+	CreatedAt time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *postR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L postL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -38,11 +40,15 @@ var PostColumns = struct {
 	CreatedBy string
 	Title     string
 	Content   string
+	CreatedAt string
+	UpdatedAt string
 }{
 	ID:        "id",
 	CreatedBy: "created_by",
 	Title:     "title",
 	Content:   "content",
+	CreatedAt: "created_at",
+	UpdatedAt: "updated_at",
 }
 
 var PostTableColumns = struct {
@@ -50,11 +56,15 @@ var PostTableColumns = struct {
 	CreatedBy string
 	Title     string
 	Content   string
+	CreatedAt string
+	UpdatedAt string
 }{
 	ID:        "post.id",
 	CreatedBy: "post.created_by",
 	Title:     "post.title",
 	Content:   "post.content",
+	CreatedAt: "post.created_at",
+	UpdatedAt: "post.updated_at",
 }
 
 // Generated where
@@ -114,11 +124,15 @@ var PostWhere = struct {
 	CreatedBy whereHelperstring
 	Title     whereHelperstring
 	Content   whereHelpernull_String
+	CreatedAt whereHelpertime_Time
+	UpdatedAt whereHelpertime_Time
 }{
 	ID:        whereHelperstring{field: "\"post\".\"id\""},
 	CreatedBy: whereHelperstring{field: "\"post\".\"created_by\""},
 	Title:     whereHelperstring{field: "\"post\".\"title\""},
 	Content:   whereHelpernull_String{field: "\"post\".\"content\""},
+	CreatedAt: whereHelpertime_Time{field: "\"post\".\"created_at\""},
+	UpdatedAt: whereHelpertime_Time{field: "\"post\".\"updated_at\""},
 }
 
 // PostRels is where relationship names are stored.
@@ -149,9 +163,9 @@ func (r *postR) GetCreatedByAccount() *Account {
 type postL struct{}
 
 var (
-	postAllColumns            = []string{"id", "created_by", "title", "content"}
+	postAllColumns            = []string{"id", "created_by", "title", "content", "created_at", "updated_at"}
 	postColumnsWithoutDefault = []string{"created_by", "title"}
-	postColumnsWithDefault    = []string{"id", "content"}
+	postColumnsWithDefault    = []string{"id", "content", "created_at", "updated_at"}
 	postPrimaryKeyColumns     = []string{"id"}
 	postGeneratedColumns      = []string{}
 )
@@ -688,6 +702,16 @@ func (o *Post) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 	}
 
 	var err error
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
+		}
+	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
 		return err
@@ -763,6 +787,12 @@ func (o *Post) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Post) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		o.UpdatedAt = currTime
+	}
+
 	var err error
 	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
 		return 0, err
@@ -892,6 +922,14 @@ func (o PostSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 func (o *Post) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns, opts ...UpsertOptionFunc) error {
 	if o == nil {
 		return errors.New("boilentity: no post provided for upsert")
+	}
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		o.UpdatedAt = currTime
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
