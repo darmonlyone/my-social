@@ -35,7 +35,7 @@ A simple structure for my social app. Have only Account table and Post table for
 
 ## How to run
 
-Require `make` if necessary.
+Require `make` if necessary. (you can look up command that use on this project on `Makefile`)
 
 - `make run` run the project
 - `make test` run test
