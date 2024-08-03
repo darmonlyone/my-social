@@ -9,10 +9,10 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
-const userIDKey string = "userID"
+const UserIDKey string = "userID"
 
 func UserIDFromContext(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value(userIDKey).(string)
+	userID, ok := ctx.Value(UserIDKey).(string)
 	return userID, ok
 }
 

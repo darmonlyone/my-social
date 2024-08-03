@@ -24,3 +24,7 @@ infra-up:
 
 infra-down:
 	cd $(CURRENT_DIR)/deployment/postgres && make down
+
+.PHONY: test
+test:
+	sh script/test.sh

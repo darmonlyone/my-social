@@ -28,19 +28,19 @@ func NewHTTPServer(
 	)
 
 	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorEncoder(encodeError),
+		kithttp.ServerErrorEncoder(EncodeError),
 	}
 
 	endpoints := MakeSocialEndpoints(svc)
 
-	loginHandler := makeLoginHTTPHandler(opts, endpoints, logger, svc)
-	registerHandler := makeRegisterHTTPHandler(opts, endpoints, logger, svc)
+	loginHandler := MakeLoginHTTPHandler(opts, endpoints, logger, svc)
+	registerHandler := MakeRegisterHTTPHandler(opts, endpoints, logger, svc)
 
-	createPostHandler := makeCreatePostHTTPHandler(opts, endpoints, logger, svc)
-	listPostHandler := makeListPostHTTPHandler(opts, endpoints, logger, svc)
-	getPostHandler := makeGetPostHTTPHandler(opts, endpoints, logger, svc)
-	editPostHandler := makeEditPostHTTPHandler(opts, endpoints, logger, svc)
-	deletePostHandler := makeDeletePostHTTPHandler(opts, endpoints, logger, svc)
+	createPostHandler := MakeCreatePostHTTPHandler(opts, endpoints, logger, svc)
+	listPostHandler := MakeListPostHTTPHandler(opts, endpoints, logger, svc)
+	getPostHandler := MakeGetPostHTTPHandler(opts, endpoints, logger, svc)
+	editPostHandler := MakeEditPostHTTPHandler(opts, endpoints, logger, svc)
+	deletePostHandler := MakeDeletePostHTTPHandler(opts, endpoints, logger, svc)
 
 	router.Group(func(r chi.Router) {
 		r.Post("/login", loginHandler.ServeHTTP)
@@ -59,65 +59,65 @@ func NewHTTPServer(
 	return router
 }
 
-func makeLoginHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+func MakeLoginHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
 	return kithttp.NewServer(
 		endpoints.Login,
 		DecodeMappingBodyRequest[LoginRequest],
-		MakeEncodeResponse(encodeError, 200),
+		MakeEncodeResponse(EncodeError, 200),
 		opts...,
 	)
 }
 
-func makeRegisterHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+func MakeRegisterHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
 	return kithttp.NewServer(
 		endpoints.Register,
 		DecodeMappingBodyRequest[RegisterRequest],
-		MakeEncodeResponse(encodeError, 201),
+		MakeEncodeResponse(EncodeError, 201),
 		opts...,
 	)
 }
 
-func makeCreatePostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+func MakeCreatePostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
 	return kithttp.NewServer(
 		endpoints.StorePost,
 		DecodeMappingBodyRequest[StorePostRequest],
-		MakeEncodeResponse(encodeError, 201),
+		MakeEncodeResponse(EncodeError, 201),
 		opts...,
 	)
 }
 
-func makeListPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+func MakeListPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
 	return kithttp.NewServer(
 		endpoints.FindAllPosts,
 		decodeEmptyRequest,
-		MakeEncodeResponse(encodeError, 200),
+		MakeEncodeResponse(EncodeError, 200),
 		opts...,
 	)
 }
 
-func makeGetPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+func MakeGetPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
 	return kithttp.NewServer(
 		endpoints.FindPost,
 		DecodeMappingBodyRequest[FindPostRequest],
-		MakeEncodeResponse(encodeError, 200),
+		MakeEncodeResponse(EncodeError, 200),
 		opts...,
 	)
 }
 
-func makeEditPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+func MakeEditPostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
 	return kithttp.NewServer(
 		endpoints.UpdatePost,
 		DecodeMappingBodyRequest[UpdatePostRequest],
-		MakeEncodeResponse(encodeError, 200),
+		MakeEncodeResponse(EncodeError, 200),
 		opts...,
 	)
 }
 
-func makeDeletePostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
+func MakeDeletePostHTTPHandler(opts []kithttp.ServerOption, endpoints SocialEndpoints, _ *zap.Logger, _ Service) http.Handler {
 	return kithttp.NewServer(
 		endpoints.DeletePost,
 		DecodeMappingBodyRequest[DeletePostRequest],
-		MakeEncodeResponse(encodeError, 200),
+		MakeEncodeResponse(EncodeError, 200),
 		opts...,
 	)
 }
@@ -158,7 +158,7 @@ func ListenAndServe(ctx context.Context, addr string, handler http.Handler, logg
 }
 
 // encode errors from business-logic
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	HandleCommonErrors(err, w)
@@ -202,7 +202,7 @@ func BasicAuthMiddleware(svc Service) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), userIDKey, account.ID)
+			ctx := context.WithValue(r.Context(), UserIDKey, account.ID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
